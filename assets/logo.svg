@@ -1,0 +1,12 @@
+<svg width="120" height="120" viewBox="0 0 120 120" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Company logo">
+  <defs>
+    <linearGradient id="logoGrad" x1="0" y1="0" x2="120" y2="120" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#6C4AB6"/>
+      <stop offset="1" stop-color="#3B82F6"/>
+    </linearGradient>
+  </defs>
+  <rect x="8" y="8" width="104" height="104" rx="26" fill="url(#logoGrad)"/>
+  <path d="M60 30 L84 44 V72 L60 86 L36 72 V44 Z" fill="#ffffff" fill-opacity="0.16"/>
+  <path d="M45 74 V46 L60 55 L75 46 V74" stroke="#ffffff" stroke-width="6" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+  <circle cx="60" cy="42" r="4.5" fill="#ffffff"/>
+</svg>
