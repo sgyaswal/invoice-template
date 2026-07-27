@@ -1014,6 +1014,29 @@ select.control {
 .is-exporting .items__table thead th { padding: 7px 6px !important; }
 .is-exporting .items__table tbody td { padding: 6px 6px !important; }
 
+/* ---- Same PDF on every device ----
+   The responsive rules below (max-width: 1024px / 640px) stack the document
+   for small screens. During export we pin the desktop layout back on, so a
+   phone, a tablet and a 27" monitor all produce a byte-for-byte comparable
+   A4 page. These selectors are 2 classes deep, so they outrank the
+   single-class rules inside the media queries regardless of source order. */
+.is-exporting body { overflow-x: hidden !important; }
+.is-exporting .inv__top {
+  flex-direction: row !important;
+  align-items: flex-start !important;
+  gap: 24px !important;
+}
+.is-exporting .inv__headline { text-align: right !important; }
+.is-exporting .inv__dates div { justify-content: flex-end !important; }
+.is-exporting .inv__parties { grid-template-columns: 1fr 1fr !important; gap: 28px !important; }
+.is-exporting .inv__foot { grid-template-columns: 1fr 1fr !important; gap: 28px !important; }
+.is-exporting .inv__totals-box { width: min(360px, 100%) !important; margin-left: auto !important; }
+.is-exporting .parties { grid-template-columns: 1fr 1fr !important; }
+.is-exporting .doc__header { flex-direction: row !important; }
+.is-exporting .doc__meta { grid-template-columns: auto auto !important; text-align: right !important; }
+.is-exporting .closing { grid-template-columns: 1fr minmax(240px, 300px) !important; }
+.is-exporting .closing__sign { align-items: center !important; }
+
 /* Summary */
 .summary {
   border: 1px solid var(--border);

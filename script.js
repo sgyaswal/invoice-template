@@ -432,9 +432,23 @@
     const paper = document.querySelector(".paper");
     const html = document.documentElement;
     const prevTheme = html.getAttribute("data-theme");
+    const prevScroll = window.scrollY;
+
+    // Wait for the web fonts before measuring anything. If Inter/Lato are still
+    // loading, the fallback stack is captured instead and line breaks shift —
+    // the classic "the PDF looks different on my machine" bug.
+    if (document.fonts && document.fonts.ready) {
+      try {
+        await document.fonts.ready;
+      } catch (e) {
+        /* fall through with whatever fonts are available */
+      }
+    }
 
     html.setAttribute("data-theme", "light");
     document.body.classList.add("is-exporting");
+    // Let the export layout apply before html2canvas measures the elements.
+    await new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)));
     try {
       const { jsPDF } = window.jspdf;
       const pdf = new jsPDF("p", "mm", "a4");
@@ -475,12 +489,18 @@
       );
 
       for (let i = 0; i < blocks.length; i++) {
+        // Render into a fixed 1080-wide viewport regardless of the real screen,
+        // and make it tall enough for the whole section, so a phone and a
+        // desktop resolve the same media queries and capture the same pixels.
         const canvas = await window.html2canvas(blocks[i], {
-          scale: 2,
+          scale: 2, // fixed DPI — not devicePixelRatio, which varies per device
           backgroundColor: "#ffffff",
           useCORS: true,
           logging: false,
           windowWidth: 1080, // force the desktop layout (media queries)
+          windowHeight: Math.max(blocks[i].scrollHeight + 200, 1200),
+          scrollX: 0,
+          scrollY: 0,
           onclone: flattenClone,
         });
         const blockH = (canvas.height * usableW) / canvas.width; // height in mm
@@ -523,17 +543,72 @@
       document.body.classList.remove("is-exporting");
       if (prevTheme) html.setAttribute("data-theme", prevTheme);
       else html.removeAttribute("data-theme");
+      window.scrollTo(0, prevScroll);
     }
   }
 
   /**
-   * Download as PDF via the browser's native print engine → "Save as PDF".
-   * This renders the very same CSS as the on-screen document, so the PDF is
-   * pixel-faithful to the preview: identical typography, no clipping, no
-   * broken rows, proper A4 page breaks (all handled by the print stylesheet).
+   * Download the invoice as a real PDF file.
+   *
+   * The browser's print dialog is deliberately NOT used: Chrome/Safari/Firefox
+   * stamp their own header and footer onto print-to-PDF output (the date, the
+   * page title, the site URL, "1/1"), the user can toggle margins and scaling,
+   * and every browser/OS lays the page out slightly differently. Generating the
+   * PDF ourselves with html2canvas + jsPDF produces one identical A4 file on
+   * Chrome, Safari, Firefox and Edge across macOS, Windows, Linux, iOS and
+   * Android — with no URL, no timestamp and no page numbering.
    */
-  function downloadPdf() {
-    printWithFilename();
+  async function downloadPdf() {
+    const btn = el.btnDownload;
+    setBusy(btn, true);
+    toast("Generating PDF…");
+    try {
+      const blob = await buildPdfBlob();
+      const filename = (buildDocNumber() || "invoice").trim() + ".pdf";
+      savePdfBlob(blob, filename);
+      toast("Downloaded " + filename);
+    } catch (e) {
+      if (!window.jspdf || !window.html2canvas) {
+        // The CDN is unreachable — fall back to the browser's own print-to-PDF
+        // so the user is never left without a document (it will carry the
+        // browser's header/footer, which is why it is only the last resort).
+        toast("PDF engine unavailable — opening print dialog instead");
+        printWithFilename();
+      } else {
+        toast("PDF failed: " + (e.message || e));
+      }
+    } finally {
+      setBusy(btn, false);
+    }
+  }
+
+  /**
+   * Hand a generated PDF Blob to the browser as a download.
+   *
+   * Desktop browsers all honour the <a download> attribute. iOS Safari ignores
+   * it for blobs, so there we fall back to opening the PDF in a new tab, where
+   * the user gets the native share/save sheet.
+   */
+  function savePdfBlob(blob, filename) {
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    const supportsDownload = "download" in a;
+
+    if (supportsDownload) {
+      a.href = url;
+      a.download = filename;
+      a.rel = "noopener";
+      a.style.display = "none";
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+    } else {
+      window.open(url, "_blank");
+    }
+    // Give the browser a moment to start reading the blob before releasing it.
+    setTimeout(function () {
+      URL.revokeObjectURL(url);
+    }, 60000);
   }
 
   /* ---------- Google Drive auto-filing ---------- */
