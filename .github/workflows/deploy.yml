@@ -46,6 +46,7 @@ jobs:
     needs: test
     if: github.event_name != 'pull_request'
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     permissions:
       pages: write
       id-token: write
@@ -54,6 +55,25 @@ jobs:
       url: ${{ steps.deploy.outputs.page_url }}
     steps:
       - uses: actions/checkout@v4
+
+      # If the repo's Pages source is still "Deploy from a branch", GitHub
+      # records the deployment but the legacy pipeline never picks it up, so
+      # deploy-pages sits in `deployment_queued` until it times out. Nothing in
+      # the workflow can repair that: configure-pages only sets build_type on a
+      # site it creates, and this site already exists. So check up front and
+      # fail in seconds with the fix, rather than hanging with no explanation.
+      - name: Pages source must be GitHub Actions
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          build_type=$(gh api "repos/${{ github.repository }}/pages" --jq '.build_type' 2>/dev/null || echo 'not-enabled')
+          echo "Pages build_type: $build_type"
+          if [ "$build_type" != "workflow" ]; then
+            echo "::error title=Pages source is not GitHub Actions::build_type is '$build_type'. \
+            Set Settings > Pages > Build and deployment > Source to 'GitHub Actions', then re-run. \
+            Deployments queue forever otherwise."
+            exit 1
+          fi
 
       # No `enablement: true` here: it calls POST /repos/{o}/{r}/pages, which
       # needs admin rights that GITHUB_TOKEN does not have, so it fails on a repo
