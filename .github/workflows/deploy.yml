@@ -11,21 +11,16 @@ on:
 permissions:
   contents: read
 
-concurrency:
-  group: deploy-${{ github.ref }}
-  cancel-in-progress: false
-
 jobs:
   # There is no build step, so this is the only thing standing between a typo
   # and a live URL: the shipped files exist, every local path in index.html /
-  # styles.css resolves, and script.js actually parses. Both deploy jobs depend
-  # on it.
+  # styles.css resolves, and script.js actually parses. The deploy depends on it.
   test:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v7
         with:
           python-version: '3.11'
 
@@ -51,21 +46,27 @@ jobs:
     permissions:
       pages: write
       id-token: write
+    # Repo-wide and on the deploy job only. A Pages deployment belongs to the
+    # repository, not to a branch, so two runs deploying at once means one gets
+    # superseded ("Error: Deployment cancelled"). Serialising here — rather than
+    # at workflow level — keeps deploys one-at-a-time without making PR checks
+    # queue behind a deploy.
+    concurrency:
+      group: pages
+      cancel-in-progress: false
     environment:
       name: github-pages
       url: ${{ steps.deploy.outputs.page_url }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
-      # If the repo's Pages source is still "Deploy from a branch" (build_type
+      # If the repo's Pages source is "Deploy from a branch" (build_type
       # "legacy"), GitHub records the deployment but the legacy pipeline never
       # picks it up, so deploy-pages sits in `deployment_queued` until it times
-      # out. configure-pages cannot repair that — it only sets build_type on a
-      # site it creates, and this site already exists.
-      #
-      # So: try to flip it over the API, then verify. Whether GITHUB_TOKEN is
-      # allowed to do this depends on the repo, hence best-effort — if it is
-      # refused we fail in seconds with the manual fix instead of hanging.
+      # out. Nothing here can repair that: configure-pages only sets build_type
+      # on a site it creates, and GITHUB_TOKEN is refused on the update endpoint
+      # (tried, got 'legacy' back). It is a one-time manual setting, so just
+      # fail in seconds with the fix rather than hanging for ten minutes.
       - name: Pages source must be GitHub Actions
         env:
           GH_TOKEN: ${{ github.token }}
@@ -73,35 +74,26 @@ jobs:
         run: |
           build_type=$(gh api "repos/$REPO/pages" --jq '.build_type' 2>/dev/null || echo 'not-enabled')
           echo "Pages build_type: $build_type"
-
           if [ "$build_type" != "workflow" ]; then
-            echo "Attempting to switch the Pages source to GitHub Actions..."
-            gh api -X PUT "repos/$REPO/pages" -f build_type=workflow 2>&1 | head -20 || true
-            build_type=$(gh api "repos/$REPO/pages" --jq '.build_type' 2>/dev/null || echo 'not-enabled')
-            echo "Pages build_type after the attempt: $build_type"
-          fi
-
-          if [ "$build_type" != "workflow" ]; then
-            echo "::error title=Pages source is not GitHub Actions::build_type is '$build_type' and this token \
-            may not change it. Set it by hand once: Settings > Pages > Build and deployment > Source > \
-            'GitHub Actions', then re-run. Deployments queue forever otherwise."
+            echo "::error title=Pages source is not GitHub Actions::build_type is '$build_type'. \
+            Set it by hand once: Settings > Pages > Build and deployment > Source > 'GitHub Actions', \
+            then re-run. Deployments queue forever otherwise."
             exit 1
           fi
 
-          echo "Pages source is GitHub Actions."
-
-      # No `enablement: true` here: it calls POST /repos/{o}/{r}/pages, which
-      # needs admin rights that GITHUB_TOKEN does not have, so it fails on a repo
-      # where Pages was never turned on. Enable it once by hand instead —
-      # Settings > Pages > Source: GitHub Actions.
-      - uses: actions/configure-pages@v5
+      # No `enablement: true`: it calls POST /repos/{o}/{r}/pages, which needs
+      # rights GITHUB_TOKEN does not have. The check above covers that case with
+      # a clearer message anyway.
+      - uses: actions/configure-pages@v6
 
       - name: Stage the site
         run: bash scripts/stage_site.sh _site
 
-      - uses: actions/upload-pages-artifact@v3
+      # upload-pages-artifact and deploy-pages are released in lockstep and the
+      # artifact format is shared, so keep these two on the same major.
+      - uses: actions/upload-pages-artifact@v5
         with:
           path: _site
 
       - id: deploy
-        uses: actions/deploy-pages@v4
+        uses: actions/deploy-pages@v5
