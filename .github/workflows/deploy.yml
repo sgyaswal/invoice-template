@@ -1,0 +1,101 @@
+name: Test and deploy
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: deploy-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  # There is no build step, so this is the only thing standing between a typo
+  # and a live URL: the shipped files exist, every local path in index.html /
+  # styles.css resolves, and script.js actually parses. Both deploy jobs depend
+  # on it.
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Site check (files present, local references resolve)
+        run: python3 scripts/check_site.py
+
+      - name: JavaScript parses
+        run: node --check script.js
+
+      - name: Staging produces a complete site
+        run: |
+          bash scripts/stage_site.sh _site
+          test -f _site/index.html
+          test -f _site/styles.css
+          test -f _site/script.js
+          test -f _site/assets/logo.png
+
+  pages:
+    needs: test
+    if: github.event_name != 'pull_request'
+    runs-on: ubuntu-latest
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deploy.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+
+      # No `enablement: true` here: it calls POST /repos/{o}/{r}/pages, which
+      # needs admin rights that GITHUB_TOKEN does not have, so it fails on a repo
+      # where Pages was never turned on. Enable it once by hand instead —
+      # Settings > Pages > Source: GitHub Actions.
+      - uses: actions/configure-pages@v5
+
+      - name: Stage the site
+        run: bash scripts/stage_site.sh _site
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site
+
+      - id: deploy
+        uses: actions/deploy-pages@v4
+
+  # Optional second target. Without an HF_TOKEN secret this job is a no-op, so
+  # the pipeline is green whether or not you use Hugging Face.
+  huggingface:
+    needs: test
+    if: github.event_name != 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - run: pip install --quiet "huggingface_hub>=0.25,<1.0"
+
+      - name: Push the site to the Hugging Face Space
+        env:
+          HF_TOKEN: ${{ secrets.HF_TOKEN }}
+          # Override by setting a repository variable named HF_SPACE.
+          HF_SPACE: ${{ vars.HF_SPACE || 'Gyaswal/invoice-template' }}
+        run: |
+          if [ -z "$HF_TOKEN" ]; then
+            echo "::notice title=Space deploy skipped::HF_TOKEN secret is not set. \
+            Add a write-scoped token at Settings > Secrets and variables > Actions."
+            exit 0
+          fi
+          bash scripts/stage_site.sh _site
+          python3 scripts/deploy_static.py --space "$HF_SPACE" --site _site

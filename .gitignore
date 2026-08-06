@@ -7,3 +7,6 @@ Thumbs.db
 
 # Node (not used, but just in case)
 node_modules/
+
+# Deploy staging output (scripts/stage_site.sh)
+_site/
