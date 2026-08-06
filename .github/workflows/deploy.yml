@@ -1,8 +1,9 @@
 name: Test and deploy
 
+# No `push` trigger: deploying is a deliberate act, not a side effect of every
+# commit to main. Pull requests still run the checks; the deploy runs when you
+# ask for it via Actions > Test and deploy > Run workflow.
 on:
-  push:
-    branches: [main]
   pull_request:
     branches: [main]
   workflow_dispatch:
