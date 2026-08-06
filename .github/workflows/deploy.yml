@@ -57,24 +57,38 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      # If the repo's Pages source is still "Deploy from a branch", GitHub
-      # records the deployment but the legacy pipeline never picks it up, so
-      # deploy-pages sits in `deployment_queued` until it times out. Nothing in
-      # the workflow can repair that: configure-pages only sets build_type on a
-      # site it creates, and this site already exists. So check up front and
-      # fail in seconds with the fix, rather than hanging with no explanation.
+      # If the repo's Pages source is still "Deploy from a branch" (build_type
+      # "legacy"), GitHub records the deployment but the legacy pipeline never
+      # picks it up, so deploy-pages sits in `deployment_queued` until it times
+      # out. configure-pages cannot repair that — it only sets build_type on a
+      # site it creates, and this site already exists.
+      #
+      # So: try to flip it over the API, then verify. Whether GITHUB_TOKEN is
+      # allowed to do this depends on the repo, hence best-effort — if it is
+      # refused we fail in seconds with the manual fix instead of hanging.
       - name: Pages source must be GitHub Actions
         env:
           GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
         run: |
-          build_type=$(gh api "repos/${{ github.repository }}/pages" --jq '.build_type' 2>/dev/null || echo 'not-enabled')
+          build_type=$(gh api "repos/$REPO/pages" --jq '.build_type' 2>/dev/null || echo 'not-enabled')
           echo "Pages build_type: $build_type"
+
           if [ "$build_type" != "workflow" ]; then
-            echo "::error title=Pages source is not GitHub Actions::build_type is '$build_type'. \
-            Set Settings > Pages > Build and deployment > Source to 'GitHub Actions', then re-run. \
-            Deployments queue forever otherwise."
+            echo "Attempting to switch the Pages source to GitHub Actions..."
+            gh api -X PUT "repos/$REPO/pages" -f build_type=workflow 2>&1 | head -20 || true
+            build_type=$(gh api "repos/$REPO/pages" --jq '.build_type' 2>/dev/null || echo 'not-enabled')
+            echo "Pages build_type after the attempt: $build_type"
+          fi
+
+          if [ "$build_type" != "workflow" ]; then
+            echo "::error title=Pages source is not GitHub Actions::build_type is '$build_type' and this token \
+            may not change it. Set it by hand once: Settings > Pages > Build and deployment > Source > \
+            'GitHub Actions', then re-run. Deployments queue forever otherwise."
             exit 1
           fi
+
+          echo "Pages source is GitHub Actions."
 
       # No `enablement: true` here: it calls POST /repos/{o}/{r}/pages, which
       # needs admin rights that GITHUB_TOKEN does not have, so it fails on a repo
