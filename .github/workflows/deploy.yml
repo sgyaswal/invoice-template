@@ -43,7 +43,12 @@ jobs:
     if: github.event_name != 'pull_request'
     runs-on: ubuntu-latest
     timeout-minutes: 15
+    # Job-level permissions replace the workflow-level block outright, so
+    # contents: read has to be repeated here or checkout is relying on this
+    # repo being public.
     permissions:
+      contents: read
+      deployments: read
       pages: write
       id-token: write
     # Repo-wide and on the deploy job only. A Pages deployment belongs to the
@@ -80,6 +85,47 @@ jobs:
             then re-run. Deployments queue forever otherwise."
             exit 1
           fi
+
+      # Pages processes one deployment per repository at a time. A deployment
+      # created while the source was still "legacy" is never processed and never
+      # completes, so it holds that slot and every later deployment sits at
+      # `deployment_queued` behind it — forever, not slowly.
+      #
+      # Cancel any leftover queued/in_progress deployment before creating ours.
+      # Best-effort throughout: a failure here must not block a deploy that would
+      # otherwise work, so every call falls through.
+      - name: Clear stuck Pages deployments
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+        run: |
+          shas=$(gh api "repos/$REPO/deployments?environment=github-pages&per_page=30" \
+                   --jq '.[].sha' 2>/dev/null || true)
+
+          if [ -z "$shas" ]; then
+            echo "No github-pages deployments on record."
+            exit 0
+          fi
+
+          stuck=0
+          for sha in $shas; do
+            status=$(gh api "repos/$REPO/pages/deployments/$sha" --jq '.status' 2>/dev/null || echo 'unknown')
+            case "$status" in
+              queued|in_progress)
+                stuck=$((stuck + 1))
+                echo "cancelling $sha (status: $status)"
+                if gh api -X POST "repos/$REPO/pages/deployments/$sha/cancel" >/dev/null 2>&1; then
+                  echo "  cancelled"
+                else
+                  echo "  cancel refused — may need doing by hand"
+                fi
+                ;;
+              *)
+                echo "$sha: $status"
+                ;;
+            esac
+          done
+          echo "Cleared $stuck stuck deployment(s)."
 
       # No `enablement: true`: it calls POST /repos/{o}/{r}/pages, which needs
       # rights GITHUB_TOKEN does not have. The check above covers that case with
