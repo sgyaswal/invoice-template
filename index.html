@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <meta name="description" content="Professional Invoice & Quotation Generator for ERP / CRM SaaS." />
-  <title>Invoice &amp; Quotation Generator</title>
+  <title>Tax Invoice · KHUSH EXIM</title>
 
   <!-- Real Inter font when online; a system stack in styles.css keeps it premium offline -->
   <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -110,7 +110,7 @@
           </div>
         </div>
 
-        <p class="sidebar__total-label">Invoice Total</p>
+        <p class="sidebar__total-label" id="sideTotalLabel">Invoice Total</p>
         <p class="sidebar__total" id="sideTotal">$0.00</p>
 
         <span class="badge" id="sideStatusBadge" data-status="paid">Paid</span>
@@ -164,7 +164,7 @@
         <h3 class="card__title">Payment Status</h3>
         <div class="stack">
           <p class="kv"><span>Grand Total</span><strong id="sidePayTotal">$0.00</strong></p>
-          <p class="kv"><span>Amount Paid</span><strong id="sidePayPaid">$0.00</strong></p>
+          <label class="kv kv--input" for="inpPaid"><span>Amount Paid</span><input type="number" id="inpPaid" class="control control--num" min="0" step="0.01" value="0" /></label>
           <p class="kv kv--accent"><span>Balance Due</span><strong id="sidePayDue">$0.00</strong></p>
         </div>
       </section>
@@ -227,58 +227,101 @@
     <!-- MAIN – the printable document                             -->
     <!-- ========================================================= -->
     <main class="doc" id="printArea">
-      <article class="paper inv">
+      <article class="paper tx">
 
-        <!-- ---------- Header : logo (left) · title & dates (right) ---------- -->
-        <header class="inv__top">
-          <img class="inv__logo" src="assets/logo.png" alt="KHUSH EXIM logo" width="88" height="88" />
-          <div class="inv__headline">
-            <h1 class="inv__title"><span id="docTypeTitle">Invoice</span> #<span id="docNumber" class="inv__edit inv__edit--line" contenteditable="true" spellcheck="false">KE262701</span></h1>
-            <dl class="inv__dates">
-              <div><dt id="metaDateLabel">Issue Date:</dt><dd id="metaDate" class="inv__edit inv__edit--line" contenteditable="true" spellcheck="false">Mar 22, 2023</dd></div>
-              <div><dt id="metaDueLabel">Due Date:</dt><dd id="metaDue" class="inv__edit inv__edit--line" contenteditable="true" spellcheck="false">Apr 21, 2023</dd></div>
-            </dl>
+        <!-- ---------- Title ---------- -->
+        <h1 class="tx__title" id="docTypeTitle">Tax Invoice</h1>
+
+        <!-- ---------- Header : parties (left) · reference grid (right) ---------- -->
+        <section class="tx__head">
+          <div class="tx__parties">
+            <div class="tx__party">
+              <p class="tx__name inv__edit inv__edit--line" contenteditable="true" spellcheck="false">KHUSH EXIM</p>
+              <address class="tx__addr inv__edit" contenteditable="true" spellcheck="false">MAVI KALAN, DELHI ROAD, SAHARANPUR<br />Saharanpur, Uttar Pradesh, 247001<br />GSTIN/UIN: 09BHMPB0535R1ZY<br />State Name : Uttar Pradesh, Code : 09<br />Contact : +91-9917585797<br />E-Mail : info.khushexim@gmail.com</address>
+            </div>
+            <div class="tx__party">
+              <p class="tx__label">Consignee (Ship to)</p>
+              <p class="tx__name inv__edit inv__edit--line" contenteditable="true" spellcheck="false">Indiani Cosmétics</p>
+              <address class="tx__addr inv__edit" contenteditable="true" spellcheck="false">C/Playa de Chipiona 1, local 3 41009<br />Sevilla - Spain<br />Contact : +34 601 16 17 00<br />E-Mail : indianicosmetics@hotmail.com</address>
+            </div>
+            <div class="tx__party">
+              <p class="tx__label" id="customerRole">Buyer (Bill to)</p>
+              <p class="tx__name inv__edit inv__edit--line" contenteditable="true" spellcheck="false">Indiani Cosmétics</p>
+              <address class="tx__addr inv__edit" contenteditable="true" spellcheck="false">C/Playa de Chipiona 1, local 3 41009<br />Sevilla - Spain<br />Contact : +34 601 16 17 00<br />E-Mail : indianicosmetics@hotmail.com</address>
+            </div>
           </div>
-        </header>
 
-        <!-- ---------- Seller ---------- -->
-        <section class="inv__seller">
-          <p class="inv__seller-name inv__edit inv__edit--line" contenteditable="true" spellcheck="false">KHUSH EXIM</p>
-          <address class="inv__addr inv__edit" contenteditable="true" spellcheck="false">MAVIKALA, DELHI ROAD, SAHARANPUR<br />Saharanpur, Uttar Pradesh, 247001<br />India<br />info.khushexim@gmail.com<br />GSTIN: 09BHMPB0535R1ZY</address>
-        </section>
-
-        <hr class="inv__rule" />
-
-        <!-- ---------- Parties : Bill to · Additional info ---------- -->
-        <section class="inv__parties">
-          <div class="inv__party">
-            <p class="inv__label" id="customerRole">Bill to:</p>
-            <p class="inv__party-name inv__edit inv__edit--line" contenteditable="true" spellcheck="false">Indiani Cosmétics</p>
-            <address class="inv__addr inv__edit" contenteditable="true" spellcheck="false">C/Playa de Chipiona 1, local 3 41009<br />Sevilla - Spain</address>
-          </div>
-          <div class="inv__party">
-            <p class="inv__label">Additional Customer Info:</p>
-            <address class="inv__addr inv__edit" contenteditable="true" spellcheck="false">indianicosmetics@hotmail.com<br />Phone: +34 601 16 17 00</address>
-          </div>
+          <dl class="tx__meta">
+            <div><dt id="metaNumberLabel">Invoice No.</dt><dd id="docNumber" class="tx__strong inv__edit inv__edit--line" contenteditable="true" spellcheck="false">KE262701</dd></div>
+            <div><dt id="metaDateLabel">Dated</dt><dd id="metaDate" class="tx__strong inv__edit inv__edit--line" contenteditable="true" spellcheck="false">17-Sep-26</dd></div>
+            <div><dt>Delivery Note</dt><dd class="inv__edit inv__edit--line" contenteditable="true" spellcheck="false"></dd></div>
+            <div><dt>Mode/Terms of Payment</dt><dd class="inv__edit inv__edit--line" contenteditable="true" spellcheck="false">MoneyGram</dd></div>
+            <div><dt>Reference No. &amp; Date.</dt><dd class="inv__edit inv__edit--line" contenteditable="true" spellcheck="false"></dd></div>
+            <div><dt>Other References</dt><dd class="inv__edit inv__edit--line" contenteditable="true" spellcheck="false"></dd></div>
+            <div><dt>Buyer’s Order No.</dt><dd class="inv__edit inv__edit--line" contenteditable="true" spellcheck="false"></dd></div>
+            <div><dt>Dated</dt><dd class="inv__edit inv__edit--line" contenteditable="true" spellcheck="false"></dd></div>
+            <div><dt>Dispatch Doc No.</dt><dd class="inv__edit inv__edit--line" contenteditable="true" spellcheck="false"></dd></div>
+            <div><dt>Delivery Note Date</dt><dd class="inv__edit inv__edit--line" contenteditable="true" spellcheck="false"></dd></div>
+            <div><dt>Dispatched through</dt><dd class="inv__edit inv__edit--line" contenteditable="true" spellcheck="false"></dd></div>
+            <div><dt>Destination</dt><dd class="inv__edit inv__edit--line" contenteditable="true" spellcheck="false"></dd></div>
+            <div><dt>Vessel/Flight No.</dt><dd class="inv__edit inv__edit--line" contenteditable="true" spellcheck="false"></dd></div>
+            <div><dt>Place of receipt by shipper:</dt><dd class="inv__edit inv__edit--line" contenteditable="true" spellcheck="false"></dd></div>
+            <div><dt>City/Port of Loading</dt><dd class="inv__edit inv__edit--line" contenteditable="true" spellcheck="false"></dd></div>
+            <div><dt>City/Port of Discharge</dt><dd class="inv__edit inv__edit--line" contenteditable="true" spellcheck="false"></dd></div>
+            <div class="tx__meta-wide"><dt>Terms of Delivery</dt><dd class="inv__edit" contenteditable="true" spellcheck="false"></dd></div>
+          </dl>
         </section>
 
         <!-- ---------- Items ---------- -->
-        <section class="inv__items">
-          <table class="inv__table" id="itemsTable">
-            <thead>
-              <tr>
-                <th class="inv__c-name">Product or Service</th>
-                <th class="inv__c-hsn">HSN/SAC</th>
-                <th class="num inv__c-qty">Quantity</th>
-                <th class="num inv__c-price">Price</th>
-                <th class="num inv__c-total">Line Total</th>
-                <th class="inv__c-act no-print" aria-label="Actions"></th>
-              </tr>
-            </thead>
-            <tbody id="itemsBody">
-              <!-- Rows injected by script.js -->
-            </tbody>
-          </table>
+        <section class="tx__items">
+          <div class="tx__scroll">
+            <table class="tx__table" id="itemsTable">
+              <thead>
+                <tr>
+                  <th class="tx__c-sl">Sl<br />No.</th>
+                  <th class="tx__c-pkg">No. &amp; Kind<br />of Pkgs.</th>
+                  <th class="tx__c-desc">Description of Goods</th>
+                  <th class="tx__c-hsn">HSN/SAC</th>
+                  <th class="tx__c-qty">Quantity</th>
+                  <th class="tx__c-rate">Rate</th>
+                  <th class="tx__c-per">per</th>
+                  <th class="tx__c-amt">Amount</th>
+                  <th class="tx__c-act no-print" aria-label="Actions"></th>
+                </tr>
+              </thead>
+              <tbody id="itemsBody">
+                <!-- Rows injected by script.js -->
+              </tbody>
+              <tbody class="tx__summary">
+                <tr class="tx__sub-row" id="subtotalRow">
+                  <td></td><td></td><td></td><td></td><td></td><td></td><td></td>
+                  <td class="num tx__subtotal" id="sumSubtotal">0.00</td>
+                  <td class="no-print"></td>
+                </tr>
+                <tr class="tx__disc-row" id="discountRow">
+                  <td></td><td></td>
+                  <td class="tx__disc-label"><em>Less :</em><strong>DISCOUNT</strong></td>
+                  <td></td><td></td><td></td><td></td>
+                  <td class="num tx__disc-amt">(-)<input type="number" id="inpDiscount" class="cell-input is-num" min="0" step="0.01" value="1750" aria-label="Discount amount" /></td>
+                  <td class="no-print"></td>
+                </tr>
+                <tr class="tx__filler" aria-hidden="true">
+                  <td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td class="no-print"></td>
+                </tr>
+              </tbody>
+              <tfoot>
+                <tr class="tx__total-row">
+                  <td></td><td></td>
+                  <td class="tx__total-label" id="totalLabel">Total</td>
+                  <td></td>
+                  <td class="tx__total-qty" id="sumQty"></td>
+                  <td></td><td></td>
+                  <td class="num tx__grand" id="sumGrand">0.00</td>
+                  <td class="no-print"></td>
+                </tr>
+              </tfoot>
+            </table>
+          </div>
 
           <!-- Empty state -->
           <div class="inv__empty" id="emptyState" hidden>
@@ -293,63 +336,49 @@
           </button>
         </section>
 
-        <!-- ---------- Payment info (left) + Totals (right) ---------- -->
-        <section class="inv__totals">
-          <!-- Payment information fills the empty space beside the totals -->
-          <div class="inv__pay">
-            <p class="inv__label">Payment Information</p>
-            <dl class="inv__pay-list">
-              <div><dt>Bank Name</dt><dd class="inv__edit inv__edit--line" contenteditable="true" spellcheck="false">ICICI LTD</dd></div>
-              <div><dt>Name</dt><dd class="inv__edit inv__edit--line" contenteditable="true" spellcheck="false">SHAIVAL BABBAR</dd></div>
-              <div><dt>Account Number</dt><dd class="inv__edit inv__edit--line" contenteditable="true" spellcheck="false">019105501407</dd></div>
-              <div><dt>IFSC Code</dt><dd class="inv__edit inv__edit--line" contenteditable="true" spellcheck="false">ICIC0000191</dd></div>
+        <!-- ---------- Amount in words ---------- -->
+        <section class="tx__words">
+          <div>
+            <p class="tx__small">Amount Chargeable (in words)</p>
+            <p class="tx__strong" id="amountWords">INR Zero Only</p>
+          </div>
+          <p class="tx__eoe">E. &amp; O.E</p>
+        </section>
+
+        <!-- ---------- Declaration (left) · Bank details (right) ---------- -->
+        <section class="tx__foot">
+          <div class="tx__decl">
+            <p class="tx__small tx__underline">Declaration</p>
+            <p class="tx__decl-text inv__edit" contenteditable="true" spellcheck="false">We declare that this invoice shows the actual price of the goods described and that all particulars are true and correct.</p>
+          </div>
+          <div class="tx__bank">
+            <p class="tx__small">Company’s Bank Details</p>
+            <dl class="tx__bank-list">
+              <div><dt>A/c Holder’s Name</dt><dd class="inv__edit inv__edit--line" contenteditable="true" spellcheck="false">KHUSH EXIM</dd></div>
+              <div><dt>Bank Name</dt><dd class="inv__edit inv__edit--line" contenteditable="true" spellcheck="false">ICICI Bank</dd></div>
+              <div><dt>A/c No.</dt><dd class="inv__edit inv__edit--line" contenteditable="true" spellcheck="false">019105501407</dd></div>
+              <div><dt>IFS Code</dt><dd class="inv__edit inv__edit--line" contenteditable="true" spellcheck="false">ICIC0000191</dd></div>
               <div><dt>SWIFT Code</dt><dd class="inv__edit inv__edit--line" contenteditable="true" spellcheck="false">ICICINBBCTS</dd></div>
             </dl>
           </div>
+        </section>
 
-          <div class="inv__totals-box">
-            <div class="inv__trow"><span>Subtotal</span><span id="sumSubtotal">$0.00</span></div>
-            <hr class="inv__trow-rule" />
-            <div class="inv__trow inv__trow--total"><span id="totalLabel">Invoice Total</span><span id="sumGrand">$0.00</span></div>
-            <div class="inv__trow inv__trow--input">
-              <label for="inpPaid">Amount Paid</label>
-              <span class="inv__paid"><input type="number" id="inpPaid" class="control control--num" min="0" step="0.01" value="0" /></span>
-            </div>
-            <div class="inv__trow inv__trow--due"><span>Balance Due</span><span id="sumDue">$0.00</span></div>
+        <!-- ---------- Signatures ---------- -->
+        <section class="tx__sign">
+          <div class="tx__sign-cust">Customer’s Seal and Signature</div>
+          <div class="tx__sign-auth">
+            <p class="tx__strong">for <span class="inv__edit inv__edit--line" contenteditable="true" spellcheck="false">KHUSH EXIM</span></p>
+            <p class="tx__sign-role">Authorised Signatory</p>
           </div>
         </section>
 
-        <!-- ---------- Notes · Legal terms ---------- -->
-        <section class="inv__foot">
-          <div class="inv__foot-col">
-            <div class="inv__foot-head">
-              <p class="inv__label">Legal Terms</p>
-              <button class="btn btn--soft no-print" id="btnAddTerm" type="button">
-                <svg class="icon" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14" /></svg>
-                Add term
-              </button>
-            </div>
-            <ul class="terms-editor" id="paymentTerms">
-              <!-- Legal terms injected by script.js -->
-            </ul>
-            <p class="empty-terms" id="termsEmpty" hidden>No terms added yet.</p>
-          </div>
-        </section>
-
-        <!-- ---------- Signature ---------- -->
-        <section class="inv__signrow">
-          <div class="inv__signature">
-            <span class="inv__sign-line" aria-hidden="true"></span>
-            <p class="inv__sign-name inv__edit inv__edit--line" contenteditable="true" spellcheck="false">Manager</p>
-            <p class="inv__sign-role">Authorized Signatory</p>
-          </div>
-        </section>
+        <p class="tx__note">This is a Computer Generated Invoice</p>
       </article>
     </main>
   </div>
 
   <!-- Toast for lightweight feedback -->
-  <div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
+  <div class="toast no-print" id="toast" role="status" aria-live="polite" hidden></div>
 
   <!-- ============================================================= -->
   <!-- External libraries (online only)                              -->

@@ -30,7 +30,7 @@ One template drives four document types:
   html2canvas), multi-page A4, no print dialog.
 - **Google Drive auto-filing** — one click saves the PDF to
   `Invoices/YYYY/MM/DD/<DocNumber>.pdf`, creating the date folders as needed.
-- **Editable payment terms** — add / edit / remove any number of terms inline.
+- **Amount in words** — e.g. *INR One Lakh Five Thousand Only*, with paise.
 - **Actions** — Save to Drive, Download PDF, Print, Send Email (`mailto:`),
   Share (`navigator.share` with a clipboard fallback).
 - **Print-perfect** — hides the sidebar & toolbar, forces a clean light theme,
@@ -153,12 +153,15 @@ does nothing destructive.
 
 ---
 
-## 🧷 Payment terms
+## 🧾 Tax-invoice layout
 
-The **Payment Terms** panel is fully dynamic — **Add term** appends an editable
-line, and each term has a remove (×) button. Terms print with the document; the
-add/remove controls never do. Start with the two seeded defaults or clear them
-and write your own.
+The printable document follows the classic Tally **Tax Invoice** layout: seller,
+consignee and buyer on the left; a ruled reference grid (Invoice No., Dated,
+Mode/Terms of Payment, Dispatch details, Terms of Delivery…) on the right; an
+items table with Sl No., packages, HSN/SAC, quantity + unit, rate, per and
+amount; an optional **Less : Discount** line; the amount chargeable in words
+(Indian Lakh/Crore system for INR); declaration, company bank details and
+signature boxes. Every text block is editable in place.
 
 ---
 
@@ -191,7 +194,8 @@ to re-skin the whole template.
 
 ## 🛠️ Customising
 
-- **Company / customer details** — edit the `.party` blocks in `index.html`.
+- **Company / customer / bank details** — edit the `.tx__party` and
+  `.tx__bank-list` blocks in `index.html`.
 - **Seed line items** — edit the `SEED_ITEMS` array in `script.js`.
 - **Currencies** — extend the `CURRENCIES` map in `script.js` and add an
   `<option>` to the currency `<select>` in `index.html`.

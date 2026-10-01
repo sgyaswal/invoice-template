@@ -527,195 +527,194 @@ select.control {
 .contact a { font-size: 12px; }
 
 /* ============================================================================
-   4b. INVOICE DOCUMENT  (minimal navy-on-white layout · matches the PDF)
+   4b. TAX INVOICE DOCUMENT  (ruled, Tally-style layout)
    ========================================================================== */
 
-/* Scoped palette + type: the document is ALWAYS light/navy — even in app dark
-   mode — so the printed page looks like a real document. */
-.inv {
+/* The document is ALWAYS black-on-white — even in app dark mode — so the
+   preview, the PDF and the printout look like the same paper invoice. */
+.tx {
   --surface: #ffffff;
-  --surface-2: #f6f8fb;
-  --border: #e7eaef;
-  --border-strong: #d3dae4;
-  --text: #22374d;          /* navy ink       */
-  --text-soft: #46586c;     /* secondary text */
-  --text-mute: #7a8ba0;     /* muted labels   */
+  --surface-2: #f4f6f9;
+  --border: #e3e6eb;
+  --border-strong: #c9ced6;
+  --text: #111111;
+  --text-soft: #333333;
+  --text-mute: #555555;
   --primary: #3a5a7d;
   --primary-600: #2c4864;
   --primary-050: #eef3f9;
-  --ring: 0 0 0 3px rgba(58, 90, 125, 0.16);
-
-  --inv-head-bg: #d9e3f6;   /* table header periwinkle */
-  --inv-due-bg: #eef4fc;    /* balance-due highlight   */
-  --inv-due-border: #d4e0f2;
+  --ring: 0 0 0 2px rgba(58, 90, 125, 0.35);
+  --rule: #000000;
 
   background: #ffffff;
   color: var(--text);
-  font-family: "Lato", "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-  font-weight: 400;
-  letter-spacing: 0.01em;
-  line-height: 1.55;
+  font-family: Arial, Helvetica, "Liberation Sans", sans-serif;
+  font-size: 12px;
+  line-height: 1.35;
 }
 
-/* ---- Header : logo (left) · title + dates (right) ---- */
-.inv__top {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  gap: 24px;
-  margin-bottom: 22px;
+.tx__title { text-align: center; font-size: 17px; font-weight: 700; padding-bottom: 2px; }
+.tx__small { font-size: 11px; color: var(--text-soft); }
+.tx__strong { font-weight: 700; }
+.tx__underline { text-decoration: underline; }
+.tx__label { font-size: 11px; color: var(--text-soft); }
+.tx__name { font-weight: 700; font-size: 13px; }
+.tx__addr { font-style: normal; font-size: 12px; }
+
+/* ---- Header box : parties (left) · reference grid (right) ---- */
+.tx__head {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  border: 1px solid var(--rule);
 }
-.inv__logo { width: 120px; height: auto; object-fit: contain; }
-.inv__headline { text-align: right; }
-.inv__title { font-size: 28px; font-weight: 700; color: var(--text); letter-spacing: 0; }
-.inv__dates { margin-top: 10px; display: grid; gap: 4px; font-size: 13px; }
-.inv__dates div { display: flex; gap: 6px; justify-content: flex-end; }
-.inv__dates dt { color: var(--text-mute); }
-.inv__dates dd { color: var(--text); }
+.tx__parties { border-right: 1px solid var(--rule); }
+.tx__party { padding: 5px 6px; }
+.tx__party + .tx__party { border-top: 1px solid var(--rule); }
 
-/* ---- Seller ---- */
-.inv__seller { margin-bottom: 4px; }
-.inv__seller-name { font-size: 15px; font-weight: 700; color: var(--text); margin-bottom: 4px; }
-.inv__addr { font-size: 13px; color: var(--text-soft); line-height: 1.7; font-style: normal; }
-
-/* ---- Divider ---- */
-.inv__rule { border: none; border-top: 1px solid var(--border); margin: 22px 0; }
-
-/* ---- Parties : Bill to · Additional info ---- */
-.inv__parties { display: grid; grid-template-columns: 1fr 1fr; gap: 28px; margin-bottom: 26px; }
-.inv__label { font-size: 12px; font-weight: 700; color: var(--text-mute); margin-bottom: 6px; }
-.inv__party-name { font-size: 15px; font-weight: 700; color: var(--text); margin-bottom: 4px; }
+.tx__meta { display: grid; grid-template-columns: 1fr 1fr; align-content: start; }
+.tx__meta > div {
+  padding: 3px 5px 4px;
+  min-height: 36px;
+  border-bottom: 1px solid var(--rule);
+}
+.tx__meta > div:nth-child(odd) { border-right: 1px solid var(--rule); }
+.tx__meta > div.tx__meta-wide { grid-column: 1 / -1; border: none; min-height: 60px; }
+.tx__meta dt { font-size: 11px; color: var(--text-soft); }
+.tx__meta dd { min-height: 16px; }
 
 /* ---- Items table ---- */
-.inv__items { margin-top: 4px; }
-.inv__table { width: 100%; border-collapse: collapse; font-size: 13.5px; }
-.inv__table thead th {
-  background: var(--inv-head-bg);
-  color: #3c5170;
-  font-weight: 700;
-  text-align: left;
-  padding: 14px 12px;
-  white-space: nowrap;
-}
-.inv__table thead th:first-child { border-radius: 8px 0 0 8px; }
-.inv__table thead th:last-child { border-radius: 0 8px 8px 0; }
-.inv__table th.num, .inv__table td.num { text-align: right; }
-.inv__table tbody td {
-  padding: 12px 12px;
-  border-bottom: 1px solid var(--border);
+.tx__items { border: 1px solid var(--rule); border-top: none; }
+.tx__scroll { overflow-x: auto; }
+.tx__table { width: 100%; min-width: 720px; border-collapse: collapse; font-size: 12px; }
+.tx__table th {
+  font-weight: 400;
+  text-align: center;
+  padding: 4px;
+  border-bottom: 1px solid var(--rule);
   vertical-align: middle;
 }
-.inv__table tbody tr:hover { background: var(--surface-2); }
-.inv__c-hsn { width: 13%; }
-.inv__c-qty { width: 13%; }
-.inv__c-price { width: 17%; }
-.inv__c-total { width: 17%; }
-.inv__c-act { width: 40px; }
-.inv__line-total { font-weight: 700; white-space: nowrap; }
+.tx__table td { padding: 1px 4px; vertical-align: top; }
+/* Vertical rules only between columns — like Tally, no lines between rows */
+.tx__table th + th,
+.tx__table td + td { border-left: 1px solid var(--rule); }
+.tx__table th.no-print,
+.tx__table td.no-print { border-left: 1px solid var(--rule); }
+.tx__table td.num { text-align: right; }
+.tx__table tbody#itemsBody tr:first-child td { padding-top: 6px; }
 
-/* Cell inputs sit flush with the header text (aligned columns) */
-.inv .cell-input { padding: 6px 4px; margin: 0 -4px; }
+.tx__c-sl { width: 30px; }
+.tx__c-pkg { width: 68px; }
+.tx__c-hsn { width: 78px; }
+.tx__c-qty { width: 110px; }
+.tx__c-rate { width: 92px; }
+.tx__c-per { width: 48px; }
+.tx__c-amt { width: 112px; }
+.tx__c-act { width: 36px; }
 
-/* Add-line button (screen only) */
+.tx__sl { text-align: left; }
+.tx .cell-input { padding: 2px 3px; margin: 0 -3px; border-radius: 4px; min-width: 0; font-weight: 400; }
+.tx .cell-input.is-name { font-weight: 700; }
+.tx__qty { white-space: nowrap; }
+.tx__qty .cell-input { display: inline-block; width: calc(100% - 34px); font-weight: 700; }
+.tx__unit { display: inline-block; width: 30px; text-align: left; padding-left: 4px; font-weight: 700; }
+.tx__amt { font-weight: 700; white-space: nowrap; }
+.tx .row-remove { width: 26px; height: 26px; }
+
+.tx__sub-row td { padding-top: 6px; }
+.tx__subtotal { border-top: 1px solid var(--rule); }
+.tx__disc-label strong { float: right; font-style: italic; }
+.tx__disc-amt { font-weight: 700; white-space: nowrap; }
+.tx__disc-amt .cell-input { display: inline-block; width: 82px; font-weight: 700; }
+.tx__filler td { height: 48px; }
+
+.tx__total-row td {
+  border-top: 1px solid var(--rule);
+  padding: 4px;
+  font-weight: 700;
+}
+.tx__total-label { text-align: right; font-weight: 400 !important; }
+.tx__total-qty { white-space: nowrap; }
+.tx__grand { font-size: 14px; white-space: nowrap; }
+
+/* ---- Amount in words ---- */
+.tx__words {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 4px 6px 8px;
+  border: 1px solid var(--rule);
+  border-top: none;
+}
+.tx__eoe { font-style: italic; font-size: 11px; white-space: nowrap; }
+
+/* ---- Declaration · bank details ---- */
+.tx__foot {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  padding: 4px 6px 8px;
+  border: 1px solid var(--rule);
+  border-top: none;
+  border-bottom: none;
+}
+.tx__decl-text { font-size: 11.5px; margin-top: 2px; }
+.tx__bank-list { margin-top: 2px; }
+.tx__bank-list > div { display: grid; grid-template-columns: 120px 1fr; gap: 6px; }
+.tx__bank-list dt { white-space: nowrap; }
+.tx__bank-list dt::after { content: " :"; }
+.tx__bank-list dd { font-weight: 700; }
+
+/* ---- Signatures ---- */
+.tx__sign { display: grid; grid-template-columns: 1fr 1fr; border: 1px solid var(--rule); }
+.tx__sign-cust { padding: 4px 6px; min-height: 64px; }
+.tx__sign-auth {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  align-items: flex-end;
+  padding: 4px 6px;
+  border-left: 1px solid var(--rule);
+  border-top: 1px solid var(--rule);
+}
+.tx__sign-role { font-size: 11px; }
+.tx__note { text-align: center; font-size: 11px; padding-top: 6px; }
+
+/* Shared helpers still used by the document */
 .inv__add {
-  display: inline-flex; align-items: center; gap: 8px;
-  margin-top: 14px; padding: 8px 12px;
-  border: 1px dashed var(--border-strong); border-radius: 8px;
-  background: transparent; color: var(--primary);
-  font-size: 13px; font-weight: 600;
-  transition: background 0.15s ease, border-color 0.15s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin: 10px;
+  padding: 7px 14px;
+  border: 1px dashed var(--border-strong);
+  border-radius: 8px;
+  background: transparent;
+  color: var(--primary);
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
 }
 .inv__add:hover { background: var(--primary-050); border-color: var(--primary); }
 .inv__add:focus-visible { outline: none; box-shadow: var(--ring); }
 
-/* Empty state */
-.inv__empty {
-  text-align: center; padding: 40px 20px;
-  border: 1.5px dashed var(--border-strong); border-radius: 12px;
-  color: var(--text-mute);
-}
-.inv__empty-title { font-size: 15px; font-weight: 700; color: var(--text); }
+.inv__empty { padding: 28px 16px; text-align: center; color: var(--text-mute); }
+.inv__empty-title { font-size: 14px; font-weight: 700; color: var(--text); }
 .inv__empty-text { margin: 4px 0 12px; }
-
-/* ---- Totals (right-aligned) ---- */
-.inv__totals {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  gap: 24px;
-  flex-wrap: wrap;
-  margin-top: 22px;
-}
-.inv__totals-box { width: min(360px, 100%); margin-left: auto; }
-.inv__trow {
-  display: flex; align-items: center; justify-content: space-between;
-  gap: 16px; padding: 10px 12px; font-size: 14px; color: var(--text-soft);
-}
-.inv__trow > span:last-child { color: var(--text); font-weight: 600; font-variant-numeric: tabular-nums; }
-.inv__trow-rule { border: none; border-top: 1px solid var(--border); margin: 2px 0; }
-.inv__trow--total > span { font-size: 15px; color: var(--text); }
-.inv__trow--total > span:last-child { font-weight: 700; }
-.inv__trow--input label { color: var(--text-soft); }
-.inv__paid { width: 132px; }
-.inv__paid .control--num { width: 100%; padding: 6px 10px; text-align: right; }
-.inv__trow--due {
-  margin-top: 8px; padding: 14px 12px;
-  background: var(--inv-due-bg);
-  border: 1px solid var(--inv-due-border);
-  border-radius: 10px;
-}
-.inv__trow--due > span { color: var(--text); }
-.inv__trow--due > span:last-child { font-size: 19px; font-weight: 800; }
-
-/* ---- Notes · Legal terms ---- */
-.inv__foot { display: grid; grid-template-columns: 1fr 1fr; gap: 28px; margin-top: 8px; }
-.inv__foot-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 4px; }
-.inv__foot-head .inv__label { margin-bottom: 0; }
-.inv__notes {
-  width: 100%; resize: vertical; min-height: 42px;
-  border: 1px solid transparent; border-radius: 8px;
-  background: transparent; padding: 6px 8px; margin: 0 -8px;
-  font: inherit; color: var(--text); line-height: 1.6;
-  transition: border-color 0.15s ease, background 0.15s ease;
-}
-.inv__notes:hover { border-color: var(--border-strong); background: var(--surface-2); }
-.inv__notes:focus-visible { outline: none; border-color: var(--primary); background: var(--surface); box-shadow: var(--ring); }
-.inv__notes::placeholder { color: var(--text-mute); }
-
-/* ---- Payment information (editable panel) ---- */
-.inv__pay {
-  border: 1px solid var(--border);
-  border-radius: 10px;
-  background: var(--surface-2);
-  padding: 12px 14px;
-  max-width: 320px;              /* small, sits on the left */
-}
-.inv__pay .inv__label { margin-bottom: 8px; font-size: 11px; }
-.inv__pay-list { display: grid; grid-template-columns: 1fr; gap: 6px; }
-.inv__pay-list > div {
-  display: flex; align-items: baseline; justify-content: space-between; gap: 14px;
-  font-size: 11.5px;
-}
-.inv__pay-list dt { color: var(--text-mute); white-space: nowrap; }
-.inv__pay-list dd { color: var(--text); font-weight: 700; text-align: right; }
-
-/* ---- Signature ---- */
-.inv__signrow { display: flex; justify-content: flex-end; margin-top: 26px; }
-.inv__signature { width: min(240px, 100%); text-align: center; }
-.inv__sign-line { display: block; height: 40px; border-bottom: 1px solid var(--border-strong); margin-bottom: 8px; }
-.inv__sign-name { font-weight: 700; font-size: 14px; color: var(--text); }
-.inv__sign-role { font-size: 12px; color: var(--text-mute); margin-top: 2px; }
 
 /* ---- Inline-editable text (contenteditable) ---- */
 .inv__edit {
-  border-radius: 6px;
-  padding: 3px 6px;
-  margin: 0 -6px;                 /* keep text aligned; box breathes outward */
+  border-radius: 4px;
+  padding: 0 3px;
+  margin: 0 -3px;                 /* keep text aligned; box breathes outward */
   transition: background 0.15s ease, box-shadow 0.15s ease;
   cursor: text;
 }
 .inv__edit:hover { background: var(--surface-2); box-shadow: inset 0 0 0 1px var(--border-strong); }
 .inv__edit:focus { outline: none; background: var(--surface); box-shadow: var(--ring); }
+
+/* Sidebar: Amount Paid input */
+.kv--input { align-items: center; }
+.kv--input .control--num { width: 140px; padding: 6px 10px; }
 
 /* ============================================================================
    LEGACY document styles below are no longer used by the current markup
@@ -995,9 +994,29 @@ select.control {
   box-shadow: none !important;
   font-size: 13px;      /* smaller words in the PDF */
 }
-/* Give each captured section bottom breathing room so html2canvas never
-   clips the descenders of its final line of text */
-.is-exporting .paper > * { padding-bottom: 14px !important; }
+.is-exporting .tx { font-size: 12px; }
+.is-exporting .tx__scroll { overflow: visible !important; }
+.is-exporting .tx__table { min-width: 0 !important; }
+.is-exporting .tx .inv__edit { box-shadow: none !important; background: transparent !important; }
+/* html2canvas draws text a few px lower than the browser does; give every
+   line that sits on a rule extra room so the rule never strikes through it */
+.is-exporting .tx__title { padding-bottom: 8px; }
+.is-exporting .tx__meta > div { padding-bottom: 9px; }
+.is-exporting .tx__party { padding-bottom: 10px; }
+.is-exporting .tx__table th { padding-bottom: 8px; }
+.is-exporting .tx__sub-row td { padding-top: 12px; }
+.is-exporting .tx__total-row td { padding-bottom: 9px; }
+.is-exporting .tx__words,
+.is-exporting .tx__foot { padding-bottom: 12px; }
+.is-exporting .tx__sign-cust,
+.is-exporting .tx__sign-auth { padding-bottom: 10px; }
+.is-exporting .tx__note { padding-bottom: 8px; }
+.is-exporting #itemsBody tr:last-child td { padding-bottom: 8px; }
+/* Whole-pixel box edges: a fractional padding (from clamp/vw) lets html2canvas
+   round the right/bottom rule off the edge of each captured section */
+.is-exporting .paper { padding: 36px !important; }
+/* html2canvas drops some collapsed cell borders; separate borders render reliably */
+.is-exporting .tx__table { border-collapse: separate; border-spacing: 0; }
 /* Flatten editable inputs to plain text */
 .is-exporting .cell-input,
 .is-exporting .control--num,
@@ -1021,16 +1040,11 @@ select.control {
    A4 page. These selectors are 2 classes deep, so they outrank the
    single-class rules inside the media queries regardless of source order. */
 .is-exporting body { overflow-x: hidden !important; }
-.is-exporting .inv__top {
-  flex-direction: row !important;
-  align-items: flex-start !important;
-  gap: 24px !important;
-}
-.is-exporting .inv__headline { text-align: right !important; }
-.is-exporting .inv__dates div { justify-content: flex-end !important; }
-.is-exporting .inv__parties { grid-template-columns: 1fr 1fr !important; gap: 28px !important; }
-.is-exporting .inv__foot { grid-template-columns: 1fr 1fr !important; gap: 28px !important; }
-.is-exporting .inv__totals-box { width: min(360px, 100%) !important; margin-left: auto !important; }
+.is-exporting .tx__head,
+.is-exporting .tx__foot,
+.is-exporting .tx__sign { grid-template-columns: 1fr 1fr !important; }
+.is-exporting .tx__parties { border-right: 1px solid #000 !important; border-bottom: none !important; }
+.is-exporting .tx__sign-auth { border-left: 1px solid #000 !important; }
 .is-exporting .parties { grid-template-columns: 1fr 1fr !important; }
 .is-exporting .doc__header { flex-direction: row !important; }
 .is-exporting .doc__meta { grid-template-columns: auto auto !important; text-align: right !important; }
@@ -1181,13 +1195,12 @@ select.control {
   .closing__sign { align-items: flex-start; }
   .money-input { width: 120px; }
 
-  /* Invoice document stacks on small screens */
-  .inv__top { flex-direction: column; align-items: flex-start; gap: 16px; }
-  .inv__headline { text-align: left; }
-  .inv__dates div { justify-content: flex-start; }
-  .inv__parties { grid-template-columns: 1fr; gap: 18px; }
-  .inv__foot { grid-template-columns: 1fr; gap: 20px; }
-  .inv__totals-box { width: 100%; }
+  /* Invoice document stacks on small screens (the items table scrolls) */
+  .tx__head,
+  .tx__foot,
+  .tx__sign { grid-template-columns: 1fr; }
+  .tx__parties { border-right: none; border-bottom: 1px solid var(--rule); }
+  .tx__sign-auth { border-left: none; }
 }
 
 /* Respect reduced motion */
@@ -1252,32 +1265,33 @@ select.control {
     box-shadow: none !important;
     padding: 0 !important;
   }
-  .inv { font-size: 10pt; }
+  .tx { font-size: 9pt; }
+  .tx__title { font-size: 13pt; }
 
-  /* Keep the two-column blocks side by side (match the on-screen preview,
-     overriding any narrow-width breakpoint that A4's pixel size may trigger) */
-  .inv__parties,
-  .inv__foot { grid-template-columns: 1fr 1fr !important; }
+  /* Keep the two-column boxes side by side (A4's pixel width can trip the
+     mobile breakpoint otherwise) */
+  .tx__head,
+  .tx__foot,
+  .tx__sign { grid-template-columns: 1fr 1fr !important; }
+  .tx__parties { border-right: 1px solid #000 !important; border-bottom: none !important; }
+  .tx__sign-auth { border-left: 1px solid #000 !important; }
+  .tx .inv__edit { box-shadow: none !important; background: transparent !important; }
 
   /* Editable fields render as plain, aligned text (native print shows values) */
   .cell-input,
-  .control--num,
-  .term-input,
-  .inv__notes {
+  .control--num {
     border: none !important;
     background: transparent !important;
     box-shadow: none !important;
-    padding: 2px 0 !important;
+    padding: 0 !important;
     margin: 0 !important;
     min-width: 0 !important;
-    width: 100% !important;
     color: var(--text) !important;
     -moz-appearance: textfield;
     appearance: textfield;
-    resize: none;
   }
+  .cell-input::placeholder { color: transparent !important; }
   .cell-input.is-num { text-align: right; }
-  /* Hide number-spinner buttons in the flattened inputs */
   .cell-input::-webkit-outer-spin-button,
   .cell-input::-webkit-inner-spin-button,
   .control--num::-webkit-outer-spin-button,
@@ -1287,63 +1301,34 @@ select.control {
   }
 
   /* ---- Fixed-layout items table: fits 186mm exactly, never overflows ---- */
-  .inv__table {
-    width: 100% !important;
-    table-layout: fixed;          /* deterministic column widths */
-    font-size: 9.5pt;
+  .tx__scroll { overflow: visible !important; }
+  .tx__table {
+    min-width: 0 !important;
+    table-layout: fixed;
+    font-size: 8.5pt;
   }
-  .inv__table th,
-  .inv__table td {
-    overflow: hidden;
-    overflow-wrap: anywhere;
-    word-break: break-word;       /* long names wrap instead of overflowing */
-    padding: 10px 12px !important;
-  }
-  .inv__table thead th { white-space: normal !important; }
-  /* 5 printable columns (the action column is .no-print) */
-  .inv__table th:nth-child(1),
-  .inv__table td:nth-child(1) { width: 36%; }   /* Product or Service */
-  .inv__table th:nth-child(2),
-  .inv__table td:nth-child(2) { width: 14%; }   /* HSN/SAC            */
-  .inv__table th:nth-child(3),
-  .inv__table td:nth-child(3) { width: 12%; }   /* Quantity           */
-  .inv__table th:nth-child(4),
-  .inv__table td:nth-child(4) { width: 19%; }   /* Price              */
-  .inv__table th:nth-child(5),
-  .inv__table td:nth-child(5) { width: 19%; }   /* Line Total         */
+  .tx__table td { overflow-wrap: anywhere; }
+  /* 8 printable columns (the action column is .no-print) */
+  .tx__c-sl { width: 5%; }
+  .tx__c-pkg { width: 9%; }
+  .tx__c-desc { width: 28%; }
+  .tx__c-hsn { width: 10%; }
+  .tx__c-qty { width: 13%; }
+  .tx__c-rate { width: 11%; }
+  .tx__c-per { width: 7%; }
+  .tx__c-amt { width: 17%; }
 
   /* ---- Page-break control : nothing cut or orphaned ---- */
-  .inv__table tbody tr,
-  .inv__totals-box,
-  .inv__trow--due,
-  .inv__pay,
-  .inv__foot,
-  .inv__signrow,
-  .inv__seller,
-  .inv__parties {
+  .tx__table tbody tr,
+  .tx__head,
+  .tx__words,
+  .tx__foot,
+  .tx__sign {
     break-inside: avoid;
-    page-break-inside: avoid;      /* legacy alias for older engines */
+    page-break-inside: avoid;
   }
-  .inv__table thead { display: table-header-group; }
-  /* Never strand a heading at the foot of a page */
-  .inv__title,
-  .inv__seller-name,
-  .inv__party-name,
-  .inv__label { break-after: avoid; page-break-after: avoid; }
-
-  /* Compact vertical rhythm so the whole invoice fits on a single A4 page */
-  .inv__rule { margin: 12px 0 !important; }
-  .inv__top { margin-bottom: 12px !important; }
-  .inv__seller { margin-bottom: 0 !important; }
-  .inv__parties { margin-bottom: 12px !important; }
-  .inv__items { margin-top: 0 !important; }
-  .inv__table th,
-  .inv__table td { padding: 7px 12px !important; }
-  .inv__totals { margin-top: 12px !important; }
-  .inv__trow { padding: 7px 12px !important; }
-  .inv__trow--due { padding: 10px 12px !important; }
-  .inv__signrow { margin-top: 12px !important; }
-  .inv__sign-line { height: 26px !important; }
+  .tx__table thead { display: table-header-group; }
+  .tx__foot { break-after: avoid; page-break-after: avoid; }
 
   a { color: var(--text) !important; text-decoration: none; }
 }

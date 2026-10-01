@@ -38,34 +38,34 @@
   /** Behaviour + labels for every supported document type. */
   const DOC_TYPES = {
     sales_invoice: {
-      title: "Invoice", prefix: "KE",
-      dateLabel: "Issue Date:", dueLabel: "Due Date:",
-      customerRole: "Bill to:", totalLabel: "Invoice Total",
+      title: "Tax Invoice", prefix: "KE",
+      numberLabel: "Invoice No.", customerRole: "Buyer (Bill to)",
+      sideLabel: "Invoice Total",
     },
     purchase_invoice: {
       title: "Purchase Invoice", prefix: "BILL",
-      dateLabel: "Bill Date:", dueLabel: "Due Date:",
-      customerRole: "Bill from:", totalLabel: "Invoice Total",
+      numberLabel: "Invoice No.", customerRole: "Supplier (Bill from)",
+      sideLabel: "Invoice Total",
     },
     sales_quotation: {
       title: "Quotation", prefix: "QUO",
-      dateLabel: "Quotation Date:", dueLabel: "Valid Until:",
-      customerRole: "Quote to:", totalLabel: "Quotation Total",
+      numberLabel: "Quotation No.", customerRole: "Buyer (Quote to)",
+      sideLabel: "Quotation Total",
     },
     purchase_quotation: {
       title: "Purchase Quotation", prefix: "RFQ",
-      dateLabel: "Request Date:", dueLabel: "Respond By:",
-      customerRole: "Request to:", totalLabel: "Quotation Total",
+      numberLabel: "RFQ No.", customerRole: "Supplier (Request to)",
+      sideLabel: "Quotation Total",
     },
   };
 
   /** Currency → symbol + locale used by Intl.NumberFormat. */
   const CURRENCIES = {
-    INR: { symbol: "₹", locale: "en-IN" },
-    USD: { symbol: "$", locale: "en-US" },
-    EUR: { symbol: "€", locale: "de-DE" },
-    GBP: { symbol: "£", locale: "en-GB" },
-    AED: { symbol: "د.إ", locale: "en-AE" },
+    INR: { symbol: "₹", locale: "en-IN", minor: "paise" },
+    USD: { symbol: "$", locale: "en-US", minor: "Cents" },
+    EUR: { symbol: "€", locale: "de-DE", minor: "Cents" },
+    GBP: { symbol: "£", locale: "en-GB", minor: "Pence" },
+    AED: { symbol: "د.إ", locale: "en-AE", minor: "Fils" },
   };
 
   /** Human labels for the status pill. */
@@ -90,25 +90,19 @@
     docNumber: "",           // editable invoice/quotation number (user-controlled)
     numberEdited: false,     // true once the user types their own number
     nextId: 1,               // incremental row id
-    items: [],               // [{ id, name, hsn, qty, price }]
-    extras: { paid: 0 },
+    items: [],               // [{ id, pkgs, name, hsn, qty, unit, price }]
+    extras: { paid: 0, discount: 1750 },
     paidEdited: false,       // false → Amount Paid auto-mirrors the total (fully paid)
-    nextTermId: 1,           // incremental payment-term id
-    paymentTerms: [],        // [{ id, text }]
   };
 
-  /** Default legal / payment terms (fully editable / removable at runtime). */
-  const SEED_TERMS = [
-    "Payment Terms: MoneyGram",
-  ];
-
-  /** Seed data used on first load (simple product / qty / price rows). */
+  /** Seed data used on first load (product / qty / unit / rate rows). */
   const SEED_ITEMS = [
-    { name: "Weft wavy 60cm 500g",     hsn: "05010010", qty: 1, price: 425 },
-    { name: "Weft straight 60cm 500g", hsn: "05010010", qty: 1, price: 425 },
-    { name: "Weft wavy 70cm 500g",     hsn: "05010010", qty: 1, price: 450 },
-    { name: "Weft straight 70cm 500g", hsn: "05010010", qty: 1, price: 450 },
-    { name: "Topper 50cm wavy",        hsn: "05010010", qty: 1, price: 115 }
+    { name: "HAIR 20 INCH",  hsn: "6703", qty: 0.2,   unit: "kgs", price: 35000 },
+    { name: "HAIR 22\"",     hsn: "6703", qty: 0.2,   unit: "kgs", price: 40000 },
+    { name: "Hair 24: DD",   hsn: "6703", qty: 0.3,   unit: "kgs", price: 60000 },
+    { name: "Hair 24\" inch", hsn: "6703", qty: 0.5,   unit: "kgs", price: 65000 },
+    { name: "Hair 26 inch",  hsn: "6703", qty: 0.5,   unit: "kgs", price: 80000 },
+    { name: "Glue",          hsn: "",     qty: 0.125, unit: "kgs", price: 10000 },
   ];
 
   /* Cached DOM refs (assigned in init) */
@@ -146,17 +140,87 @@
     }
   }
 
+  /** Format a plain amount with the active locale's grouping ("1,06,750.00"). */
+  function formatAmount(amount) {
+    const cfg = CURRENCIES[state.currency] || CURRENCIES.INR;
+    const value = Number.isFinite(amount) ? amount : 0;
+    return new Intl.NumberFormat(cfg.locale, {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    }).format(value);
+  }
+
+  /** Format a quantity: whole numbers as-is, fractions to 3 places ("1.825"). */
+  function formatQty(qty) {
+    return Number.isInteger(qty) ? String(qty) : qty.toFixed(3);
+  }
+
+  const ONES = [
+    "", "One", "Two", "Three", "Four", "Five", "Six", "Seven", "Eight", "Nine",
+    "Ten", "Eleven", "Twelve", "Thirteen", "Fourteen", "Fifteen", "Sixteen",
+    "Seventeen", "Eighteen", "Nineteen",
+  ];
+  const TENS = ["", "", "Twenty", "Thirty", "Forty", "Fifty", "Sixty", "Seventy", "Eighty", "Ninety"];
+
+  /** 0–999 in words. */
+  function wordsBelowThousand(n) {
+    const parts = [];
+    if (n >= 100) {
+      parts.push(ONES[Math.floor(n / 100)] + " Hundred");
+      n %= 100;
+    }
+    if (n >= 20) {
+      parts.push(TENS[Math.floor(n / 10)] + (n % 10 ? " " + ONES[n % 10] : ""));
+    } else if (n > 0) {
+      parts.push(ONES[n]);
+    }
+    return parts.join(" ");
+  }
+
+  /**
+   * Whole number in words. INR uses the Indian system (Crore / Lakh /
+   * Thousand), every other currency the international one (Billion / Million).
+   */
+  function integerToWords(n, indian) {
+    if (n === 0) return "Zero";
+    const scales = indian
+      ? [[1e7, "Crore"], [1e5, "Lakh"], [1e3, "Thousand"]]
+      : [[1e9, "Billion"], [1e6, "Million"], [1e3, "Thousand"]];
+    const parts = [];
+    scales.forEach(([size, name]) => {
+      if (n >= size) {
+        const chunk = Math.floor(n / size);
+        // Indian crores can exceed 99, so recurse rather than assume < 1000
+        parts.push((chunk >= 1000 ? integerToWords(chunk, indian) : wordsBelowThousand(chunk)) + " " + name);
+        n %= size;
+      }
+    });
+    if (n > 0) parts.push(wordsBelowThousand(n));
+    return parts.join(" ");
+  }
+
+  /** "INR One Lakh Five Thousand Only" (Tally's amount-chargeable line). */
+  function amountInWords(amount) {
+    const cfg = CURRENCIES[state.currency] || CURRENCIES.INR;
+    const cents = Math.round(Math.abs(amount) * 100);
+    const whole = Math.floor(cents / 100);
+    const minor = cents % 100;
+    let text = state.currency + " " + integerToWords(whole, state.currency === "INR");
+    if (minor) text += " and " + integerToWords(minor, false) + " " + cfg.minor;
+    return text + " Only";
+  }
+
   /** Coerce an input value to a non-negative number. */
   function toNumber(value) {
     const n = parseFloat(value);
     return Number.isFinite(n) ? n : 0;
   }
 
-  /** Format a Date as "Jul 19, 2026". */
+  /** Format a Date the Tally way: "17-Sep-26". */
   function formatDate(date) {
-    return new Intl.DateTimeFormat("en-US", {
-      month: "short", day: "numeric", year: "numeric",
-    }).format(date);
+    const month = new Intl.DateTimeFormat("en-US", { month: "short" }).format(date);
+    return String(date.getDate()).padStart(2, "0") + "-" + month + "-" +
+      String(date.getFullYear() % 100).padStart(2, "0");
   }
 
   let toastTimer = null;
@@ -180,14 +244,17 @@
      ======================================================================== */
 
   /** Build one <tr> of markup for a line item. */
-  function rowMarkup(item) {
+  function rowMarkup(item, index) {
     return (
       '<tr data-id="' + item.id + '">' +
-        '<td><input class="cell-input is-name" data-field="name" type="text" value="' + esc(item.name) + '" placeholder="Product or service" /></td>' +
+        '<td class="tx__sl">' + (index + 1) + '</td>' +
+        '<td><input class="cell-input" data-field="pkgs" type="text" value="' + esc(item.pkgs) + '" aria-label="No. and kind of packages" /></td>' +
+        '<td><input class="cell-input is-name" data-field="name" type="text" value="' + esc(item.name) + '" placeholder="Description of goods" /></td>' +
         '<td><input class="cell-input" data-field="hsn" type="text" value="' + esc(item.hsn) + '" placeholder="HSN/SAC" /></td>' +
-        '<td class="num"><input class="cell-input is-num" data-field="qty" type="number" min="0" step="1" value="' + esc(item.qty) + '" /></td>' +
+        '<td class="num tx__qty"><input class="cell-input is-num" data-field="qty" type="number" min="0" step="any" value="' + esc(formatQty(toNumber(item.qty))) + '" /><span class="tx__unit" data-unit="' + item.id + '">' + esc(item.unit) + '</span></td>' +
         '<td class="num"><input class="cell-input is-num" data-field="price" type="number" min="0" step="0.01" value="' + esc(item.price) + '" /></td>' +
-        '<td class="num inv__line-total" data-total="' + item.id + '">—</td>' +
+        '<td><input class="cell-input" data-field="unit" type="text" value="' + esc(item.unit) + '" placeholder="unit" aria-label="Unit" /></td>' +
+        '<td class="num tx__amt" data-total="' + item.id + '">—</td>' +
         '<td class="inv__c-act no-print">' +
           '<button class="row-remove" type="button" data-remove="' + item.id + '" title="Remove item" aria-label="Remove item">' +
             '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2m2 0v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6" /><path d="M10 11v6M14 11v6" /></svg>' +
@@ -206,14 +273,15 @@
     } else {
       el.emptyState.hidden = true;
       el.itemsTable.hidden = false;
-      el.itemsBody.innerHTML = state.items.map(rowMarkup).join("");
+      el.itemsBody.innerHTML = state.items.map((it, i) => rowMarkup(it, i)).join("");
     }
     recalculate();
   }
 
   /** Append a fresh blank line item. */
   function addItem() {
-    state.items.push({ id: state.nextId++, name: "", hsn: "", qty: 1, price: 0 });
+    const prev = state.items[state.items.length - 1];
+    state.items.push({ id: state.nextId++, pkgs: "", name: "", hsn: prev ? prev.hsn : "", qty: 1, unit: prev ? prev.unit : "pcs", price: 0 });
     renderItems();
     // Focus the name field of the new row for fast entry
     const last = el.itemsBody.querySelector("tr:last-child .is-name");
@@ -228,82 +296,28 @@
   }
 
   /* ==========================================================================
-     4b. PAYMENT TERMS  (add / edit / remove)
-     ======================================================================== */
-
-  /** Markup for a single editable payment term. */
-  function termMarkup(term) {
-    return (
-      '<li class="term-row" data-term-id="' + term.id + '">' +
-        '<span class="term-bullet" aria-hidden="true"></span>' +
-        '<input class="term-input" type="text" value="' + esc(term.text) + '" placeholder="Enter a payment term…" />' +
-        '<button class="term-remove no-print" type="button" data-remove-term="' + term.id + '" title="Remove term" aria-label="Remove term">' +
-          '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18M6 6l12 12" /></svg>' +
-        "</button>" +
-      "</li>"
-    );
-  }
-
-  /** Render the payment-terms list (or its empty state). */
-  function renderTerms() {
-    if (state.paymentTerms.length === 0) {
-      el.paymentTerms.innerHTML = "";
-      el.termsEmpty.hidden = false;
-    } else {
-      el.termsEmpty.hidden = true;
-      el.paymentTerms.innerHTML = state.paymentTerms.map(termMarkup).join("");
-    }
-  }
-
-  /** Append a blank payment term and focus it. */
-  function addTerm() {
-    state.paymentTerms.push({ id: state.nextTermId++, text: "" });
-    renderTerms();
-    const last = el.paymentTerms.querySelector(".term-row:last-child .term-input");
-    if (last) last.focus();
-  }
-
-  /** Remove a payment term by id. */
-  function removeTerm(id) {
-    state.paymentTerms = state.paymentTerms.filter((t) => t.id !== id);
-    renderTerms();
-  }
-
-  /** Keep state in sync while a term is edited (event delegation). */
-  function onTermInput(event) {
-    const input = event.target.closest(".term-input");
-    if (!input) return;
-    const row = input.closest(".term-row");
-    const id = Number(row.getAttribute("data-term-id"));
-    const term = state.paymentTerms.find((t) => t.id === id);
-    if (term) term.text = input.value;
-  }
-
-  /** Handle remove-term clicks (event delegation). */
-  function onTermClick(event) {
-    const btn = event.target.closest("[data-remove-term]");
-    if (!btn) return;
-    removeTerm(Number(btn.getAttribute("data-remove-term")));
-  }
-
-  /* ==========================================================================
      5. CALCULATION ENGINE
      ======================================================================== */
 
   /** Compute per-line totals + document totals; write them back to the DOM. */
   function recalculate() {
     let subtotal = 0;
+    let qtyTotal = 0;
+    const units = new Set();
 
     state.items.forEach((item) => {
       const lineTotal = toNumber(item.qty) * toNumber(item.price);
       subtotal += lineTotal;
+      qtyTotal += toNumber(item.qty);
+      units.add(String(item.unit || "").trim());
 
-      // Update the line-total cell (inputs untouched → focus is preserved)
+      // Update the amount cell (inputs untouched → focus is preserved)
       const cell = el.itemsBody.querySelector('[data-total="' + item.id + '"]');
-      if (cell) cell.textContent = formatCurrency(lineTotal);
+      if (cell) cell.textContent = formatAmount(lineTotal);
     });
 
-    const invoiceTotal = subtotal;        // no tax/discount in this layout
+    const discount = state.extras.discount;
+    const invoiceTotal = subtotal - discount;
     // Until the user edits it, Amount Paid mirrors the total (invoice is "Paid")
     if (!state.paidEdited) {
       state.extras.paid = invoiceTotal;
@@ -313,14 +327,19 @@
     const balanceDue = invoiceTotal - paid;
 
     // ---- Write totals ----
-    el.sumSubtotal.textContent = formatCurrency(subtotal);
+    el.sumSubtotal.textContent = formatAmount(subtotal);
     el.sumGrand.textContent = formatCurrency(invoiceTotal);
-    el.sumDue.textContent = formatCurrency(balanceDue);
+    // Total quantity only means something when every line shares one unit
+    const unit = units.size === 1 ? Array.from(units)[0] : null;
+    el.sumQty.textContent = unit !== null ? (formatQty(qtyTotal) + " " + unit).trim() : "";
+    el.amountWords.textContent = amountInWords(invoiceTotal);
+    // Subtotal + "Less : Discount" lines only print when there is a discount
+    el.subtotalRow.classList.toggle("no-print", discount === 0);
+    el.discountRow.classList.toggle("no-print", discount === 0);
 
     // ---- Mirror into the sidebar ----
     el.sideTotal.textContent = formatCurrency(invoiceTotal);
     el.sidePayTotal.textContent = formatCurrency(invoiceTotal);
-    el.sidePayPaid.textContent = formatCurrency(paid);
     el.sidePayDue.textContent = formatCurrency(balanceDue);
 
     // ---- Payment progress bar ----
@@ -360,10 +379,9 @@
   function applyDocType() {
     const cfg = DOC_TYPES[state.docType];
     el.docTypeTitle.textContent = cfg.title;
-    el.metaDateLabel.textContent = cfg.dateLabel;
-    el.metaDueLabel.textContent = cfg.dueLabel;
+    el.metaNumberLabel.textContent = cfg.numberLabel;
     el.customerRole.textContent = cfg.customerRole;
-    el.totalLabel.textContent = cfg.totalLabel;
+    el.sideTotalLabel.textContent = cfg.sideLabel;
     // Refresh the number's prefix only until the user types their own
     if (!state.numberEdited) {
       state.docNumber = defaultDocNumber();
@@ -457,7 +475,7 @@
       const margin = 10; // mm
       const usableW = pageW - margin * 2;
       const usableH = pageH - margin * 2;
-      const gap = 4; // mm between sections
+      const gap = 0; // sections butt together so the ruled boxes stay continuous
       let cursorY = margin;
 
       // In the cloned copy html2canvas renders, replace every editable <input>/
@@ -470,8 +488,12 @@
           const span = clonedDoc.createElement("span");
           span.textContent = field.value != null ? field.value : "";
           span.style.display = "inline-block";
-          span.style.width = "100%";
+          // Keep the field's rendered width: a 100%-wide span would push the
+          // unit label beside a quantity out of its cell and widen the table
+          span.style.width = field.getBoundingClientRect().width + "px";
+          span.style.whiteSpace = "nowrap";
           span.style.font = "inherit";
+          span.style.fontWeight = clonedDoc.defaultView.getComputedStyle(field).fontWeight;
           span.style.color = "inherit";
           span.style.verticalAlign = "middle";
           span.style.textAlign =
@@ -492,7 +514,7 @@
         // Render into a fixed 1080-wide viewport regardless of the real screen,
         // and make it tall enough for the whole section, so a phone and a
         // desktop resolve the same media queries and capture the same pixels.
-        const canvas = await window.html2canvas(blocks[i], {
+        const shot = await window.html2canvas(blocks[i], {
           scale: 2, // fixed DPI — not devicePixelRatio, which varies per device
           backgroundColor: "#ffffff",
           useCORS: true,
@@ -503,7 +525,21 @@
           scrollY: 0,
           onclone: flattenClone,
         });
+        // The ruled boxes put their border on the outermost pixel of each
+        // capture, where PDF viewers drop it when downsampling. Pad the sides
+        // and bottom with white so every rule sits inside the image.
+        const pad = 4; // device px (2 CSS px at scale 2)
+        const canvas = document.createElement("canvas");
+        canvas.width = shot.width + pad * 2;
+        canvas.height = shot.height + pad;
+        const ctx = canvas.getContext("2d");
+        ctx.fillStyle = "#ffffff";
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        ctx.drawImage(shot, pad, 0);
         const blockH = (canvas.height * usableW) / canvas.width; // height in mm
+        // Advance by the unpadded height: the next section is drawn over the
+        // white bottom pad so the boxes still butt together seamlessly
+        const advanceH = (shot.height * usableW) / canvas.width;
 
         if (blockH <= usableH) {
           // Whole section fits on a page — start a new page if needed
@@ -512,7 +548,7 @@
             cursorY = margin;
           }
           pdf.addImage(canvas.toDataURL("image/jpeg", 0.95), "JPEG", margin, cursorY, usableW, blockH);
-          cursorY += blockH + gap;
+          cursorY += advanceH + gap;
         } else {
           // Rare: a section taller than a full page (e.g. a very long table).
           // Slice only this section so all its content is still included.
@@ -778,7 +814,7 @@
     const body = encodeURIComponent(
       "Hello,\n\nPlease find " + DOC_TYPES[state.docType].title + " " + number +
       " for a total of " + el.sumGrand.textContent + ".\n\n" +
-      "Balance due: " + el.sumDue.textContent + "\n\n" +
+      "Balance due: " + el.sidePayDue.textContent + "\n\n" +
       "Kind regards,\nKHUSH EXIM"
     );
     window.location.href = "mailto:john.smith@northwind.co?subject=" + subject + "&body=" + body;
@@ -788,7 +824,7 @@
     const number = buildDocNumber();
     const shareData = {
       title: DOC_TYPES[state.docType].title + " " + number,
-      text: "Total " + el.sumGrand.textContent + " · Balance due " + el.sumDue.textContent,
+      text: "Total " + el.sumGrand.textContent + " · Balance due " + el.sidePayDue.textContent,
       url: window.location.href,
     };
     try {
@@ -846,6 +882,10 @@
 
     const numericFields = ["qty", "price"];
     item[field] = numericFields.indexOf(field) !== -1 ? toNumber(input.value) : input.value;
+    if (field === "unit") {
+      const label = tr.querySelector("[data-unit]");
+      if (label) label.textContent = input.value;
+    }
     recalculate();
   }
 
@@ -856,23 +896,19 @@
     removeItem(Number(btn.getAttribute("data-remove")));
   }
 
-  /** Handle edits to the Amount Paid input. */
+  /** Handle edits to the Amount Paid / Discount inputs. */
   function onExtraInput(event) {
-    const map = { inpPaid: "paid" };
+    const map = { inpPaid: "paid", inpDiscount: "discount" };
     const key = map[event.target.id];
     if (!key) return;
-    state.paidEdited = true;   // user has taken manual control of Amount Paid
+    if (key === "paid") state.paidEdited = true;   // user has taken manual control of Amount Paid
     state.extras[key] = toNumber(event.target.value);
     recalculate();
   }
 
-  /** Set the invoice/quotation dates dynamically (today + 30-day term). */
+  /** Date the document today. */
   function initDates() {
-    const today = new Date();
-    const due = new Date(today.getTime());
-    due.setDate(due.getDate() + 30);
-    el.metaDate.textContent = formatDate(today);
-    el.metaDue.textContent = formatDate(due);
+    el.metaDate.textContent = formatDate(new Date());
   }
 
   /** Cache every DOM element the app touches. */
@@ -882,16 +918,15 @@
       "themeToggle", "toast",
       "itemsTable", "itemsBody", "emptyState",
       "btnAddItem", "btnAddItemEmpty",
-      "paymentTerms", "termsEmpty", "btnAddTerm",
       "btnDrive", "btnDownload", "btnPrint", "btnEmail", "btnShare",
-      "docTypeTitle", "docNumber",
-      "metaDateLabel", "metaDate", "metaDueLabel", "metaDue",
-      "customerRole", "totalLabel",
+      "docTypeTitle", "docNumber", "metaNumberLabel", "metaDate",
+      "customerRole", "sideTotalLabel",
       "sideStatusBadge",
-      "sumSubtotal", "sumGrand", "sumDue",
-      "sideTotal", "sidePayTotal", "sidePayPaid", "sidePayDue",
+      "sumSubtotal", "sumGrand", "sumQty", "amountWords",
+      "subtotalRow", "discountRow",
+      "sideTotal", "sidePayTotal", "sidePayDue",
       "paidProgress", "paidHint",
-      "inpPaid",
+      "inpPaid", "inpDiscount",
     ].forEach((id) => { el[id] = $(id); });
   }
 
@@ -905,13 +940,8 @@
     el.btnAddItem.addEventListener("click", addItem);
     el.btnAddItemEmpty.addEventListener("click", addItem);
 
-    // Payment terms (add / edit / remove)
-    el.btnAddTerm.addEventListener("click", addTerm);
-    el.paymentTerms.addEventListener("input", onTermInput);
-    el.paymentTerms.addEventListener("click", onTermClick);
-
-    // Amount Paid input
-    ["inpPaid"].forEach((id) => {
+    // Amount Paid + Discount inputs
+    ["inpPaid", "inpDiscount"].forEach((id) => {
       el[id].addEventListener("input", onExtraInput);
     });
 
@@ -969,9 +999,7 @@
     cacheDom();
 
     // Seed line items with the sample data
-    state.items = SEED_ITEMS.map((it) => Object.assign({ id: state.nextId++ }, it));
-    // Seed default legal / payment terms (editable / removable)
-    state.paymentTerms = SEED_TERMS.map((text) => ({ id: state.nextTermId++, text: text }));
+    state.items = SEED_ITEMS.map((it) => Object.assign({ id: state.nextId++, pkgs: "" }, it));
     // Amount Paid defaults to the full total (fully paid) until the user edits it
     state.paidEdited = false;
 
@@ -986,7 +1014,6 @@
     applyCurrency();   // also triggers the first recalculate()
     applyStatus();
     renderItems();
-    renderTerms();
     bindEvents();
     initGoogle();      // no-op until a real Client ID is configured
   }
