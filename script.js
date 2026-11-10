@@ -251,9 +251,8 @@
         '<td><input class="cell-input" data-field="pkgs" type="text" value="' + esc(item.pkgs) + '" aria-label="No. and kind of packages" /></td>' +
         '<td><input class="cell-input is-name" data-field="name" type="text" value="' + esc(item.name) + '" placeholder="Description of goods" /></td>' +
         '<td><input class="cell-input" data-field="hsn" type="text" value="' + esc(item.hsn) + '" placeholder="HSN/SAC" /></td>' +
-        '<td class="num tx__qty"><input class="cell-input is-num" data-field="qty" type="number" min="0" step="any" value="' + esc(formatQty(toNumber(item.qty))) + '" /><span class="tx__unit" data-unit="' + item.id + '">' + esc(item.unit) + '</span></td>' +
+        '<td class="num tx__qty"><input class="cell-input is-num" data-field="qty" type="number" min="0" step="any" value="' + esc(formatQty(toNumber(item.qty))) + '" /><input class="cell-input tx__unit" data-field="unit" type="text" value="' + esc(item.unit) + '" placeholder="unit" aria-label="Unit" /></td>' +
         '<td class="num"><input class="cell-input is-num" data-field="price" type="number" min="0" step="0.01" value="' + esc(item.price) + '" /></td>' +
-        '<td><input class="cell-input" data-field="unit" type="text" value="' + esc(item.unit) + '" placeholder="unit" aria-label="Unit" /></td>' +
         '<td class="num tx__amt" data-total="' + item.id + '">—</td>' +
         '<td class="inv__c-act no-print">' +
           '<button class="row-remove" type="button" data-remove="' + item.id + '" title="Remove item" aria-label="Remove item">' +
@@ -882,10 +881,6 @@
 
     const numericFields = ["qty", "price"];
     item[field] = numericFields.indexOf(field) !== -1 ? toNumber(input.value) : input.value;
-    if (field === "unit") {
-      const label = tr.querySelector("[data-unit]");
-      if (label) label.textContent = input.value;
-    }
     recalculate();
   }
 

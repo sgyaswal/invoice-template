@@ -158,7 +158,7 @@ does nothing destructive.
 The printable document follows the classic Tally **Tax Invoice** layout: seller,
 consignee and buyer on the left; a ruled reference grid (Invoice No., Dated,
 Mode/Terms of Payment, Dispatch details, Terms of Delivery…) on the right; an
-items table with Sl No., packages, HSN/SAC, quantity + unit, rate, per and
+items table with Sl No., packages, HSN/SAC, quantity + unit, rate and
 amount; an optional **Less : Discount** line; the amount chargeable in words
 (Indian Lakh/Crore system for INR); declaration, company bank details and
 signature boxes. Every text block is editable in place.

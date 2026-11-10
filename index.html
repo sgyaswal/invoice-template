@@ -284,7 +284,6 @@
                   <th class="tx__c-hsn">HSN/SAC</th>
                   <th class="tx__c-qty">Quantity</th>
                   <th class="tx__c-rate">Rate</th>
-                  <th class="tx__c-per">per</th>
                   <th class="tx__c-amt">Amount</th>
                   <th class="tx__c-act no-print" aria-label="Actions"></th>
                 </tr>
@@ -294,19 +293,19 @@
               </tbody>
               <tbody class="tx__summary">
                 <tr class="tx__sub-row" id="subtotalRow">
-                  <td></td><td></td><td></td><td></td><td></td><td></td><td></td>
+                  <td></td><td></td><td></td><td></td><td></td><td></td>
                   <td class="num tx__subtotal" id="sumSubtotal">0.00</td>
                   <td class="no-print"></td>
                 </tr>
                 <tr class="tx__disc-row" id="discountRow">
                   <td></td><td></td>
                   <td class="tx__disc-label"><em>Less :</em><strong>DISCOUNT</strong></td>
-                  <td></td><td></td><td></td><td></td>
+                  <td></td><td></td><td></td>
                   <td class="num tx__disc-amt">(-)<input type="number" id="inpDiscount" class="cell-input is-num" min="0" step="0.01" value="1750" aria-label="Discount amount" /></td>
                   <td class="no-print"></td>
                 </tr>
                 <tr class="tx__filler" aria-hidden="true">
-                  <td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td class="no-print"></td>
+                  <td></td><td></td><td></td><td></td><td></td><td></td><td></td><td class="no-print"></td>
                 </tr>
               </tbody>
               <tfoot>
@@ -315,7 +314,7 @@
                   <td class="tx__total-label" id="totalLabel">Total</td>
                   <td></td>
                   <td class="tx__total-qty" id="sumQty"></td>
-                  <td></td><td></td>
+                  <td></td>
                   <td class="num tx__grand" id="sumGrand">0.00</td>
                   <td class="no-print"></td>
                 </tr>

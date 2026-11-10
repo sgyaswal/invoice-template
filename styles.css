@@ -607,7 +607,6 @@ select.control {
 .tx__c-hsn { width: 78px; }
 .tx__c-qty { width: 110px; }
 .tx__c-rate { width: 92px; }
-.tx__c-per { width: 48px; }
 .tx__c-amt { width: 112px; }
 .tx__c-act { width: 36px; }
 
@@ -616,7 +615,7 @@ select.control {
 .tx .cell-input.is-name { font-weight: 700; }
 .tx__qty { white-space: nowrap; }
 .tx__qty .cell-input { display: inline-block; width: calc(100% - 34px); font-weight: 700; }
-.tx__unit { display: inline-block; width: 30px; text-align: left; padding-left: 4px; font-weight: 700; }
+.tx__qty .cell-input.tx__unit { width: 34px; margin: 0; text-align: left; }
 .tx__amt { font-weight: 700; white-space: nowrap; }
 .tx .row-remove { width: 26px; height: 26px; }
 
@@ -1292,6 +1291,7 @@ select.control {
   }
   .cell-input::placeholder { color: transparent !important; }
   .cell-input.is-num { text-align: right; }
+  .tx__qty .cell-input.tx__unit { padding-left: 4px !important; }
   .cell-input::-webkit-outer-spin-button,
   .cell-input::-webkit-inner-spin-button,
   .control--num::-webkit-outer-spin-button,
@@ -1308,14 +1308,13 @@ select.control {
     font-size: 8.5pt;
   }
   .tx__table td { overflow-wrap: anywhere; }
-  /* 8 printable columns (the action column is .no-print) */
+  /* 7 printable columns (the action column is .no-print) */
   .tx__c-sl { width: 5%; }
   .tx__c-pkg { width: 9%; }
-  .tx__c-desc { width: 28%; }
+  .tx__c-desc { width: 35%; }
   .tx__c-hsn { width: 10%; }
   .tx__c-qty { width: 13%; }
   .tx__c-rate { width: 11%; }
-  .tx__c-per { width: 7%; }
   .tx__c-amt { width: 17%; }
 
   /* ---- Page-break control : nothing cut or orphaned ---- */
