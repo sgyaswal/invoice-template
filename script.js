@@ -95,14 +95,14 @@
     paidEdited: false,       // false → Amount Paid auto-mirrors the total (fully paid)
   };
 
-  /** Seed data used on first load (product / qty / unit / rate rows). */
+  /** Seed data used on first load (product / qty / unit / rate rows; rate is the line amount). */
   const SEED_ITEMS = [
-    { name: "HAIR 20 INCH",  hsn: "6703", qty: 0.2,   unit: "kgs", price: 35000 },
-    { name: "HAIR 22\"",     hsn: "6703", qty: 0.2,   unit: "kgs", price: 40000 },
-    { name: "Hair 24: DD",   hsn: "6703", qty: 0.3,   unit: "kgs", price: 60000 },
-    { name: "Hair 24\" inch", hsn: "6703", qty: 0.5,   unit: "kgs", price: 65000 },
-    { name: "Hair 26 inch",  hsn: "6703", qty: 0.5,   unit: "kgs", price: 80000 },
-    { name: "Glue",          hsn: "",     qty: 0.125, unit: "kgs", price: 10000 },
+    { name: "HAIR 20 INCH",  hsn: "6703", qty: 0.2,   unit: "kgs", price: 7000 },
+    { name: "HAIR 22\"",     hsn: "6703", qty: 0.2,   unit: "kgs", price: 8000 },
+    { name: "Hair 24: DD",   hsn: "6703", qty: 0.3,   unit: "kgs", price: 18000 },
+    { name: "Hair 24\" inch", hsn: "6703", qty: 0.5,   unit: "kgs", price: 32500 },
+    { name: "Hair 26 inch",  hsn: "6703", qty: 0.5,   unit: "kgs", price: 40000 },
+    { name: "Glue",          hsn: "",     qty: 0.125, unit: "kgs", price: 1250 },
   ];
 
   /* Cached DOM refs (assigned in init) */
@@ -305,7 +305,8 @@
     const units = new Set();
 
     state.items.forEach((item) => {
-      const lineTotal = toNumber(item.qty) * toNumber(item.price);
+      // The rate is the line amount; quantity is descriptive only (not multiplied)
+      const lineTotal = toNumber(item.price);
       subtotal += lineTotal;
       qtyTotal += toNumber(item.qty);
       units.add(String(item.unit || "").trim());

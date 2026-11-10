@@ -15,7 +15,7 @@ One template drives four document types:
 
 - **Dashboard layout** — 25% action sidebar + 75% printable document.
 - **Live line items** — add / remove unlimited rows with inline editing.
-- **Auto-calculation engine** — quantity × price, per-line discount, per-line
+- **Auto-calculation engine** — line amount = rate (quantity is descriptive), per-line discount, per-line
   tax, subtotal, tax split (CGST/SGST · IGST · VAT), shipping, other charges,
   automatic **round-off**, grand total, amount paid and **balance due**.
 - **Currency aware** — USD, INR, EUR, GBP, AED via `Intl.NumberFormat`.
